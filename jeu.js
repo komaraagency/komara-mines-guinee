@@ -443,6 +443,7 @@
     etat.camera.x = etat.camion.x;
     etat.camera.y = etat.camion.y;
     etat.charge = 0;
+    etat.gainVoyage = 0;
     etat.gazole = reservoirMax();
     etat.gainSite = 0;
     etat.livraisonsSite = 0;
@@ -778,10 +779,13 @@
     const gain = debit * site.prix * multiPrix() * multiSerie();
     etat.charge -= debit;
     etat.argent += gain;
+    etat.gainVoyage += gain;
     etat.gainSite += gain;
     etat.livraisonsSite += (etat.charge <= 0.001 ? 1 : 0);
     sauvegarde.argent = etat.argent;
     if (etat.charge <= 0.001) {
+      const total = Math.round(etat.gainVoyage);
+      etat.gainVoyage = 0;
       sauvegarde.livraisons += 1;
       sauvegarde.serie = (sauvegarde.serie || 0) + 1;
       sauvegarde.record = Math.max(sauvegarde.record || 0, sauvegarde.serie);
@@ -795,14 +799,14 @@
           toast("Contrat du jour rempli", "+" + CONTRAT_PRIME + " € de prime", "#ffd700");
         }
       }
-      etat.flottants.push({ x: etat.camion.x, y: etat.camion.y - 40, texte: "+" + euros(gain), vie: 1.6 });
+      etat.flottants.push({ x: etat.camion.x, y: etat.camion.y - 40, texte: "+" + euros(total), vie: 1.8 });
       if (sauvegarde.serie > 1) {
         etat.flottants.push({
           x: etat.camion.x, y: etat.camion.y - 74,
           texte: "SÉRIE x" + sauvegarde.serie, vie: 1.8,
         });
       }
-      gagnerXp(Math.round(gain));
+      gagnerXp(Math.max(1, Math.round(total * 0.5)));
       bip(660, 0.12, "sine", 0.16);
       setTimeout(() => bip(880, 0.16, "sine", 0.16), 110);
       enregistrer();
