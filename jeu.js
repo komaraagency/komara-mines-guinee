@@ -112,6 +112,7 @@
   }
 
   /* -------------------------------- etat -------------------------------- */
+  let blocageAuto = 0;
   const AUTO = (function () {
     try { return new URLSearchParams(location.search).has("auto"); } catch (e) { return false; }
   })();
@@ -423,8 +424,11 @@
       const cible = etat.gazole < 22 ? site.pompe : (pleinBenne ? site.tremie : site.pelle);
       const d = dist(c, cible);
       if (d > 105) {
-        const a = Math.atan2(cible.y - c.y, cible.x - c.x);
-        input.x = Math.cos(a); input.y = Math.sin(a); input.mag = 1;
+        let a = Math.atan2(cible.y - c.y, cible.x - c.x);
+        if (blocageAuto > 0.7) a += Math.sin(etat.temps * 2.6) * 1.1; // contourne l'obstacle
+        input.x = Math.cos(a);
+        input.y = Math.sin(a);
+        input.mag = clamp(d / 300, 0.4, 1); // ralentit en approchant
       } else {
         input.x = 0; input.y = 0; input.mag = 0;
       }
@@ -444,6 +448,11 @@
     const accel = input.frein ? 780 : 520;
     if (c.v < cibleV) c.v = Math.min(cibleV, c.v + accel * dt);
     else c.v = Math.max(cibleV, c.v - accel * dt);
+
+    if (AUTO) {
+      if (input.mag > 0.3 && c.v < 55) blocageAuto += dt;
+      else blocageAuto = Math.max(0, blocageAuto - dt);
+    }
 
     // avance
     if (c.v > 0.4) {
@@ -596,22 +605,25 @@
     ctx.clearRect(0, 0, L, H);
 
     const cam = etat.camera;
-    const ox = L / 2 - cam.x;
-    const oy = H / 2 - cam.y;
+    const z = clamp(Math.min(L / 900, H / 500), 0.92, 1.5);
+    const vueL = L / (2 * z);
+    const vueH = H / (2 * z);
 
     ctx.save();
-    ctx.translate(ox, oy);
+    ctx.translate(L / 2, H / 2);
+    ctx.scale(z, z);
+    ctx.translate(-cam.x, -cam.y);
 
     // sol
     ctx.fillStyle = motifSol || "#a34a26";
-    ctx.fillRect(cam.x - L / 2 - 40, cam.y - H / 2 - 40, L + 80, H + 80);
+    ctx.fillRect(cam.x - vueL - 40, cam.y - vueH - 40, vueL * 2 + 80, vueH * 2 + 80);
 
     // pistes
     for (const [a, b] of routes) dessinerRoute(a, b);
 
     // decor (visible seulement)
     for (const d of decor) {
-      if (Math.abs(d.x - cam.x) > L / 2 + 60 || Math.abs(d.y - cam.y) > H / 2 + 60) continue;
+      if (Math.abs(d.x - cam.x) > vueL + 60 || Math.abs(d.y - cam.y) > vueH + 60) continue;
       if (d.type === "buisson") {
         ctx.fillStyle = "rgba(52,86,44,0.92)";
         ctx.beginPath();
@@ -645,7 +657,7 @@
 
     // rochers
     for (const ro of rochers) {
-      if (Math.abs(ro.x - cam.x) > L / 2 + 80 || Math.abs(ro.y - cam.y) > H / 2 + 80) continue;
+      if (Math.abs(ro.x - cam.x) > vueL + 80 || Math.abs(ro.y - cam.y) > vueH + 80) continue;
       ctx.fillStyle = "rgba(0,0,0,0.22)";
       ctx.beginPath();
       ctx.ellipse(ro.x + 5, ro.y + 7, ro.r, ro.r * 0.82, 0, 0, Math.PI * 2);
