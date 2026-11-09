@@ -135,10 +135,25 @@
   let routes = [];
 
   // filet de securite : si une erreur survient, on l'affiche au lieu d'un ecran fige
+  function diag(msg) {
+    let d = document.getElementById("diag");
+    if (!d) {
+      d = document.createElement("div");
+      d.id = "diag";
+      d.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99999;background:#b00020;color:#fff;" +
+        "font:12px/1.45 ui-monospace,monospace;padding:8px;white-space:pre-wrap;max-height:45vh;overflow:auto";
+      document.body.appendChild(d);
+    }
+    d.textContent = String(msg).slice(0, 400);
+  }
   window.addEventListener("error", function (e) {
-    const b = document.getElementById("bulle");
-    if (b) { b.classList.remove("cache"); b.textContent = "Erreur technique : " + e.message; }
+    diag("ERREUR: " + e.message + "\n" + (e.filename || "") + " ligne " + e.lineno + ":" + e.colno);
   });
+  window.addEventListener("unhandledrejection", function (e) {
+    const r = e.reason;
+    diag("PROMESSE: " + ((r && r.message) || r));
+  });
+  window.__diag = diag;
 
   /* ------------------------------ canvas -------------------------------- */
   // polyfill roundRect (Safari 15 et navigateurs anciens)
@@ -1073,6 +1088,14 @@
   }
 
   function ouvrirJeu(i) {
+    try {
+      ouvrirJeuInterne(i);
+    } catch (err) {
+      diag("ouverture: " + (err && err.message) + "\n" + ((err && err.stack) || "").split("\n").slice(0, 3).join("\n"));
+    }
+  }
+
+  function ouvrirJeuInterne(i) {
     preparerSite(i);
     afficher("jeu");
     redimensionner();
