@@ -1502,7 +1502,7 @@
     dernierHud = etat.temps;
     hud.argent.textContent = euros(etat.argent);
     hud.site.textContent = site.nom + " · " + site.minerai;
-    if (hud.niveau) hud.niveau.textContent = (niveauActuel() + 1) + " · " + titreActuel();
+    if (hud.niveau) hud.niveau.textContent = (niveauActuel() + 1) + " · " + titreActuel() + " · " + Math.floor(sauvegarde.xp) + " XP";
     if (hud.barXp) hud.barXp.style.width = Math.round(progressionNiveau() * 100) + "%";
     const serie = sauvegarde.serie || 0;
     if (hud.serie) hud.serie.textContent = "x" + multiSerie().toFixed(2).replace(".", ",");
