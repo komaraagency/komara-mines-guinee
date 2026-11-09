@@ -420,8 +420,8 @@
 
     // pilote automatique : va a la pelle, puis a la tremie, et passe a la pompe
     if (AUTO) {
-      const pleinBenne = etat.charge >= capaciteMax() - 0.01;
-      const cible = etat.gazole < 22 ? site.pompe : (pleinBenne ? site.tremie : site.pelle);
+      const vide = etat.charge < 0.2;
+      const cible = etat.gazole < 22 ? site.pompe : (vide ? site.pelle : site.tremie);
       const d = dist(c, cible);
       if (d > 105) {
         let a = Math.atan2(cible.y - c.y, cible.x - c.x);
@@ -509,8 +509,8 @@
     } else if (dTremie < 155 && etat.charge > 0.05) {
       if (arrete) decharger(dt);
       else bulle("Arrête-toi dans le cercle pour vider la benne.");
-    } else if (etat.charge >= capaciteMax() - 0.01) {
-      bulle("Benne pleine. File à la trémie.");
+    } else if (etat.charge > 0.2) {
+      bulle("File à la trémie pour vendre " + etat.charge.toFixed(0) + " t.");
     } else {
       bulle("");
     }
@@ -997,8 +997,8 @@
 
   function dessinerGuide() {
     const c = etat.camion;
-    const plein = etat.charge >= capaciteMax() - 0.01;
-    const cible = plein ? site.tremie : (etat.gazole < 18 ? site.pompe : site.pelle);
+    const charge = etat.charge > 0.2;
+    const cible = etat.gazole < 18 ? site.pompe : (charge ? site.tremie : site.pelle);
     const d = dist(c, cible);
     if (d < 320) return;
 

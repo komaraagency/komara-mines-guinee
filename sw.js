@@ -1,5 +1,5 @@
 /* Komara Mines Guinée — service worker */
-const CACHE = "komara-mines-v5";
+const CACHE = "komara-mines-v6";
 const ESSENTIELS = [
   "./", "index.html", "style.css?v=1", "jeu.js?v=1", "manifest.json",
   "icon-192.png", "icon-512.png", "assets/logo-256.png", "assets/favicon-64.png"
