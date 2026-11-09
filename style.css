@@ -452,3 +452,123 @@ body {
   #jauges { width: 15rem; }
   #minimap { width: 6.4rem; height: 6.4rem; }
 }
+
+/* ---------------------------- drapeau Guinée --------------------------- */
+.drap-gn {
+  display: inline-block;
+  width: 1.25em; height: 0.85em;
+  vertical-align: -0.08em;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #ce1126 0 33.34%, #fcd116 33.34% 66.67%, #009460 66.67% 100%);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
+}
+
+/* ------------------------- invitation paysage -------------------------- */
+#rotation {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: none;
+  place-items: center;
+  padding: 1rem;
+  background: #08080a;
+  text-align: center;
+}
+#rotation.actif { display: grid; }
+.rot-carte { max-width: 22rem; }
+.rot-ico {
+  font-size: 3.4rem;
+  display: block;
+  margin-bottom: 0.4rem;
+  animation: pivoter 2.2s ease-in-out infinite;
+}
+@keyframes pivoter {
+  0%, 35% { transform: rotate(0deg); }
+  60%, 100% { transform: rotate(90deg); }
+}
+.rot-carte p { font-size: 1.25rem; font-weight: 900; margin: 0.2rem 0 0.5rem; }
+.rot-carte small { display: block; color: var(--doux); font-size: 0.82rem; line-height: 1.5; margin-bottom: 1rem; }
+#rot-continuer {
+  border: 1px solid var(--bord);
+  background: rgba(255, 255, 255, 0.07);
+  color: var(--texte);
+  border-radius: 10px;
+  padding: 0.6rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+/* ======================= MODE PAYSAGE (le jeu) ========================= */
+@media (orientation: landscape) {
+  :root { --u: clamp(12px, min(3.2vw, 4.4vh), 21px); }
+}
+
+@media (orientation: landscape) and (max-height: 560px) {
+  /* accueil : deux colonnes pour tenir dans la hauteur */
+  #accueil { padding: 0.5rem 0.9rem; align-items: center; }
+  .carte-accueil {
+    max-width: 44rem;
+    display: grid;
+    grid-template-columns: 1.05fr 0.95fr;
+    gap: 0 1.1rem;
+    align-items: center;
+    padding: 0.85rem 1rem;
+    text-align: left;
+  }
+  .carte-accueil .logo { width: 3.6rem; height: 3.6rem; float: left; margin: 0 0.6rem 0 0; }
+  .carte-accueil .sur-titre { margin: 0.1rem 0 0.1rem; font-size: 0.62rem; }
+  .carte-accueil h1 { font-size: clamp(1.7rem, 6vh, 2.4rem); line-height: 0.95; }
+  .baseline { font-size: 0.76rem; margin: 0.35rem 0 0.55rem; line-height: 1.35; }
+  .btn-principal { padding: 0.7rem; font-size: 0.95rem; }
+  .stats { margin: 0.5rem 0; gap: 0.35rem; }
+  .stats b { font-size: 0.82rem; }
+  .stats span { font-size: 0.56rem; }
+  .sites { margin-bottom: 0.4rem; gap: 0.28rem; }
+  .site-carte { padding: 0.35rem 0.5rem; font-size: 0.72rem; }
+  .site-carte em { font-size: 0.64rem; }
+  .note { font-size: 0.66rem; margin: 0 0 0.4rem; line-height: 1.4; }
+  .lien-discret { font-size: 0.6rem; }
+
+  /* HUD compact */
+  #hud { top: calc(env(safe-area-inset-top) + 0.35rem); left: 0.45rem; right: 0.45rem; }
+  .hud-gauche { padding: 0.3rem 0.5rem; }
+  .hud-ligne b { font-size: 0.85rem; }
+  .hud-label { font-size: 0.52rem; }
+  .btn-rond { width: 2.15rem; height: 2.15rem; font-size: 0.9rem; }
+
+  /* jauges cote a cote en haut au centre */
+  #jauges {
+    top: calc(env(safe-area-inset-top) + 0.35rem);
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(46%, 20rem);
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+  .jauge { padding: 0.22rem 0.4rem 0.28rem; }
+  .jauge-tete { font-size: 0.54rem; }
+  .jauge-tete b { font-size: 0.6rem; }
+  .jauge-barre { height: 0.3rem; }
+
+  /* minimap en haut a droite, plus petite */
+  #minimap {
+    width: 3.9rem; height: 3.9rem;
+    top: calc(env(safe-area-inset-top) + 3rem);
+    right: 0.45rem;
+  }
+
+  /* controles : plus bas et plus petits */
+  #zone-joystick { width: 46%; height: 55%; }
+  #joystick { width: 5rem; height: 5rem; left: 0.8rem; bottom: calc(env(safe-area-inset-bottom) + 0.7rem); }
+  #joystick i { width: 2.3rem; height: 2.3rem; margin: -1.15rem 0 0 -1.15rem; }
+  #boutons-jeu { right: 0.7rem; bottom: calc(env(safe-area-inset-bottom) + 0.7rem); gap: 0.4rem; }
+  .btn-action { width: 3.6rem; height: 3.6rem; font-size: 0.5rem; }
+  .btn-action span { font-size: 1.2rem; }
+  .btn-action.frein { width: 4.1rem; height: 4.1rem; }
+
+  #bulle { bottom: 22%; font-size: 0.72rem; padding: 0.35rem 0.7rem; }
+
+  .panneau { max-width: 30rem; max-height: 92vh; padding: 0.9rem 1rem; }
+  .panneau h2 { font-size: 1.15rem; margin-bottom: 0.6rem; }
+  .amelioration { padding: 0.45rem 0.6rem; }
+}

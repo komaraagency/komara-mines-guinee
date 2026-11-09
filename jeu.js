@@ -43,7 +43,7 @@
     son: true,
   };
 
-  function charger() {
+  function chargerSauvegarde() {
     try {
       const brut = JSON.parse(localStorage.getItem(CLE) || "null");
       if (!brut || typeof brut !== "object") return { ...DEFAUT, amels: { ...DEFAUT.amels }, termines: [] };
@@ -56,7 +56,7 @@
       return { ...DEFAUT, amels: { ...DEFAUT.amels }, termines: [] };
     }
   }
-  let sauvegarde = charger();
+  let sauvegarde = chargerSauvegarde();
   function enregistrer() {
     try { localStorage.setItem(CLE, JSON.stringify(sauvegarde)); } catch (e) {}
   }
@@ -112,6 +112,10 @@
   }
 
   /* -------------------------------- etat -------------------------------- */
+  const AUTO = (function () {
+    try { return new URLSearchParams(location.search).has("auto"); } catch (e) { return false; }
+  })();
+
   const etat = {
     ecran: "accueil",
     siteIndex: 0,
@@ -413,6 +417,19 @@
     const c = etat.camion;
     const vMax = vitesseMax();
 
+    // pilote automatique : va a la pelle, puis a la tremie, et passe a la pompe
+    if (AUTO) {
+      const pleinBenne = etat.charge >= capaciteMax() - 0.01;
+      const cible = etat.gazole < 22 ? site.pompe : (pleinBenne ? site.tremie : site.pelle);
+      const d = dist(c, cible);
+      if (d > 105) {
+        const a = Math.atan2(cible.y - c.y, cible.x - c.x);
+        input.x = Math.cos(a); input.y = Math.sin(a); input.mag = 1;
+      } else {
+        input.x = 0; input.y = 0; input.mag = 0;
+      }
+    }
+
     // direction voulue
     const mag = input.mag || 0;
     if (mag > 0.12) {
@@ -478,7 +495,7 @@
     } else if (dPompe < 150 && etaGazolePlein() === false) {
       remplir(dt);
     } else if (dPelle < 150 && etat.charge < capaciteMax()) {
-      if (arrete) charger(dt);
+      if (arrete) chargerMinerai(dt);
       else bulle("Arrête le camion dans le cercle pour charger.");
     } else if (dTremie < 155 && etat.charge > 0.05) {
       if (arrete) decharger(dt);
@@ -522,7 +539,7 @@
   }
 
   let sonCharge = 0;
-  function charger(dt) {
+  function chargerMinerai(dt) {
     const avant = etat.charge;
     etat.charge = Math.min(capaciteMax(), etat.charge + 7 * dt);
     if (etat.charge > avant) {
@@ -1104,6 +1121,7 @@
     etat.enPause = false;
     audioInit();
     if (audio.ctx && audio.ctx.state === "suspended") audio.ctx.resume();
+    majRotation();
   }
 
   function basculerPause() {
@@ -1255,8 +1273,27 @@
   }
 
   /* -------------------------------- init -------------------------------- */
+  let forcerPortrait = false;
+  function majRotation() {
+    const el = $("#rotation");
+    if (!el) return;
+    const portrait = window.matchMedia("(orientation: portrait)").matches;
+    const petit = Math.min(window.innerWidth, window.innerHeight) < 900;
+    el.classList.toggle("actif", portrait && petit && !forcerPortrait && etat.ecran === "jeu");
+    if (el.classList.contains("actif") && !etat.enPause) etat.enPause = true;
+  }
+
   function demarrer() {
     $("#btn-son").textContent = sauvegarde.son ? "🔊" : "🔇";
+    const rotBtn = $("#rot-continuer");
+    if (rotBtn) rotBtn.addEventListener("click", () => {
+      forcerPortrait = true;
+      majRotation();
+      etat.enPause = false;
+    });
+    window.addEventListener("orientationchange", () => setTimeout(() => { majRotation(); redimensionner(); }, 350));
+    window.addEventListener("resize", () => { majRotation(); redimensionner(); });
+    majRotation();
     redimensionner();
     brancherJoystick();
     brancherClavier();

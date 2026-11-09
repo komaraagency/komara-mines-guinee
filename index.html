@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="assets/favicon-64.png" sizes="64x64">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="stylesheet" href="style.css?v=3">
+<link rel="stylesheet" href="style.css?v=4">
 </head>
 <body>
 
@@ -22,7 +22,7 @@
 <section id="accueil" class="ecran actif">
   <div class="carte-accueil">
     <img class="logo" src="assets/logo-256.png" alt="Komara Agency" width="92" height="92">
-    <p class="sur-titre">komara Agency · Guinée 🇬🇳</p>
+    <p class="sur-titre">komara Agency · Guinée <span class="drap-gn" role="img" aria-label="Guinée"></span></p>
     <h1>Komara<br>Mines</h1>
     <p class="baseline">Conducteur d'engins lourds. Charge la bauxite, l'or, le fer et le diamant, et livre-les au port.</p>
 
@@ -123,6 +123,16 @@
   </div>
 </section>
 
+<!-- invitation a passer en paysage -->
+<div id="rotation">
+  <div class="rot-carte">
+    <div class="rot-ico">📱</div>
+    <p>Tourne ton téléphone</p>
+    <small>Le jeu se joue à l'horizontale, comme un vrai engin de chantier.</small>
+    <button id="rot-continuer">Jouer quand même</button>
+  </div>
+</div>
+
 <script>
 /* veille : capture toute erreur, y compris celles du moteur */
 window.addEventListener("error", function (e) {
@@ -144,6 +154,6 @@ window.addEventListener("unhandledrejection", function (e) {
   d.textContent = "PROMESSE REJETEE: " + e.reason;
 }, true);
 </script>
-<script src="jeu.js?v=3"></script>
+<script src="jeu.js?v=4"></script>
 </body>
 </html>
