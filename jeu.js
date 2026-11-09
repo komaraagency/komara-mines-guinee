@@ -40,6 +40,7 @@
   const DEFAUT = {
     argent: 0, livraisons: 0, site: 0, termines: [],
     amels: { capacite: 0, moteur: 0, reservoir: 0, rendement: 0 },
+    xp: 0, serie: 0, record: 0, succes: [], contrat: { jour: "", fait: false, n: 0 },
     son: true,
   };
 
@@ -95,6 +96,110 @@
   const reservoirMax = () => valeurAmel("reservoir");
   const multiPrix = () => 1 + valeurAmel("rendement") / 100;
 
+
+  /* --------------------------- progression ------------------------------ */
+  const NIVEAUX = [
+    { xp: 0, titre: "Apprenti" },
+    { xp: 300, titre: "Conducteur" },
+    { xp: 900, titre: "Chauffeur confirmé" },
+    { xp: 2000, titre: "Chef d'équipe" },
+    { xp: 4000, titre: "Contremaître" },
+    { xp: 7500, titre: "Chef de site" },
+    { xp: 13000, titre: "Patron des mines" },
+    { xp: 22000, titre: "Légende de Guinée" },
+  ];
+
+  function niveauActuel() {
+    let n = 0;
+    for (let i = 0; i < NIVEAUX.length; i++) if (sauvegarde.xp >= NIVEAUX[i].xp) n = i;
+    return n;
+  }
+  function progressionNiveau() {
+    const n = niveauActuel();
+    if (n >= NIVEAUX.length - 1) return 1;
+    const a = NIVEAUX[n].xp, b = NIVEAUX[n + 1].xp;
+    return (sauvegarde.xp - a) / (b - a);
+  }
+  const titreActuel = () => NIVEAUX[niveauActuel()].titre;
+
+  const SUCCES = [
+    { id: "premiere", nom: "Premier chargement", test: () => sauvegarde.livraisons >= 1, prime: 50 },
+    { id: "dix", nom: "Dix bennes livrées", test: () => sauvegarde.livraisons >= 10, prime: 200 },
+    { id: "cinquante", nom: "Cinquante bennes", test: () => sauvegarde.livraisons >= 50, prime: 800 },
+    { id: "serie5", nom: "Série de 5 livraisons", test: () => sauvegarde.record >= 5, prime: 300 },
+    { id: "serie10", nom: "Série de 10 livraisons", test: () => sauvegarde.record >= 10, prime: 700 },
+    { id: "riche", nom: "10 000 € gagnés", test: () => sauvegarde.argent >= 10000, prime: 500 },
+    { id: "boke", nom: "Boké terminé", test: () => sauvegarde.termines.indexOf("boke") !== -1, prime: 250 },
+    { id: "tous", nom: "Les quatre sites terminés", test: () => sauvegarde.termines.length >= 4, prime: 2000 },
+    { id: "niveau3", nom: "Chef d'équipe", test: () => niveauActuel() >= 3, prime: 400 },
+    { id: "niveau5", nom: "Chef de site", test: () => niveauActuel() >= 5, prime: 1200 },
+  ];
+
+  function jourDuJour() {
+    const d = new Date();
+    return d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+  }
+
+  function contratEnCours() {
+    if (!sauvegarde.contrat || sauvegarde.contrat.jour !== jourDuJour()) {
+      sauvegarde.contrat = { jour: jourDuJour(), fait: false, n: 0 };
+    }
+    return sauvegarde.contrat;
+  }
+  const CONTRAT_BUT = 6;
+  const CONTRAT_PRIME = 900;
+
+  // petit message qui glisse en haut de l'ecran
+  let fileToast = [];
+  let toastEnCours = false;
+  function toast(titre, texte, couleur) {
+    fileToast.push({ titre, texte, couleur });
+    if (!toastEnCours) suivantToast();
+  }
+  function suivantToast() {
+    const t = fileToast.shift();
+    if (!t) { toastEnCours = false; return; }
+    toastEnCours = true;
+    const el = $("#toast");
+    if (!el) { toastEnCours = false; return; }
+    el.innerHTML = "<b>" + t.titre + "</b>" + (t.texte ? "<span>" + t.texte + "</span>" : "");
+    el.style.setProperty("--couleur", t.couleur || "#ffd700");
+    el.classList.add("visible");
+    setTimeout(() => {
+      el.classList.remove("visible");
+      setTimeout(suivantToast, 320);
+    }, 2300);
+  }
+
+  function verifierSucces() {
+    SUCCES.forEach((s) => {
+      if (sauvegarde.succes.indexOf(s.id) !== -1) return;
+      if (!s.test()) return;
+      sauvegarde.succes.push(s.id);
+      sauvegarde.argent += s.prime;
+      etat.argent = sauvegarde.argent;
+      toast("Succès : " + s.nom, "+" + s.prime + " € de prime", "#35d07f");
+      bip(880, 0.12, "sine", 0.14);
+      setTimeout(() => bip(1180, 0.16, "sine", 0.14), 140);
+      enregistrer();
+    });
+  }
+
+  function gagnerXp(n) {
+    const avant = niveauActuel();
+    sauvegarde.xp += n;
+    const apres = niveauActuel();
+    if (apres > avant) {
+      toast("Niveau " + (apres + 1) + " : " + NIVEAUX[apres].titre, "Tu progresses, continue !", "#4fd6e6");
+      bip(700, 0.12, "sine", 0.15);
+      setTimeout(() => bip(1050, 0.2, "sine", 0.15), 130);
+      etat.flottants.push({ x: etat.camion.x, y: etat.camion.y - 70, texte: "NIVEAU " + (apres + 1), vie: 2.2 });
+    }
+    verifierSucces();
+    enregistrer();
+  }
+
+  /* --------------------------- progression ------------------------------ */
   /* ------------------------------ utilitaires --------------------------- */
   const $ = (s) => document.querySelector(s);
   const clamp = (v, a, b) => (v < a ? a : v > b ? b : v);
@@ -139,6 +244,8 @@
   let rochers = [];
   let decor = [];
   let routes = [];
+  let ouvriers = [];
+  let mât = null;
 
   // filet de securite : si une erreur survient, on l'affiche au lieu d'un ecran fige
   function diag(msg) {
@@ -192,30 +299,55 @@
 
   /* --------------------------- motif de terrain ------------------------- */
   let motifSol = null;
+  let lumiere = null, lumiereCle = "";
   function fabriquerSol(couleurMinerai) {
+    const T = 320;
     const c = document.createElement("canvas");
-    c.width = c.height = 220;
+    c.width = c.height = T;
     const g = c.getContext("2d");
-    g.fillStyle = "#a34a26";
-    g.fillRect(0, 0, 220, 220);
-    const r = rng(7);
-    for (let i = 0; i < 420; i++) {
-      const x = r() * 220, y = r() * 220, rad = 1 + r() * 7;
-      const teinte = r();
-      g.fillStyle =
-        teinte > 0.72 ? "rgba(196,110,60,0.55)" :
-        teinte > 0.42 ? "rgba(139,60,30,0.45)" :
-        "rgba(122,52,26,0.35)";
-      g.beginPath();
-      g.arc(x, y, rad, 0, Math.PI * 2);
-      g.fill();
+    const r = rng(11);
+
+    // terre de latérite
+    g.fillStyle = "#9d4522";
+    g.fillRect(0, 0, T, T);
+
+    // grandes variations de teinte (humidité, zones tassées)
+    for (let i = 0; i < 26; i++) {
+      const x = r() * T, y = r() * T, rad = 30 + r() * 90;
+      const grd = g.createRadialGradient(x, y, 0, x, y, rad);
+      const sombre = r() > 0.5;
+      grd.addColorStop(0, sombre ? "rgba(120,52,26,0.34)" : "rgba(184,102,58,0.28)");
+      grd.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = grd;
+      g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill();
     }
-    // petits eclats de minerai
-    for (let i = 0; i < 60; i++) {
+
+    // grain fin
+    for (let i = 0; i < 1600; i++) {
+      const x = r() * T, y = r() * T, rad = 0.6 + r() * 2.4;
+      const t = r();
+      g.fillStyle = t > 0.7 ? "rgba(201,124,74,0.5)" : t > 0.4 ? "rgba(126,56,28,0.42)" : "rgba(88,38,20,0.34)";
+      g.beginPath(); g.arc(x, y, rad, 0, Math.PI * 2); g.fill();
+    }
+
+    // petits cailloux avec ombre portée
+    for (let i = 0; i < 110; i++) {
+      const x = r() * T, y = r() * T, rad = 1.4 + r() * 3.2;
+      g.fillStyle = "rgba(0,0,0,0.18)";
+      g.beginPath(); g.ellipse(x + 1, y + 1.4, rad, rad * 0.8, 0, 0, Math.PI * 2); g.fill();
+      const gris = 118 + r() * 62;
+      g.fillStyle = "rgb(" + Math.round(gris) + "," + Math.round(gris * 0.9) + "," + Math.round(gris * 0.82) + ")";
+      g.beginPath(); g.ellipse(x, y, rad, rad * 0.78, r() * 3, 0, Math.PI * 2); g.fill();
+      g.fillStyle = "rgba(255,255,255,0.22)";
+      g.beginPath(); g.ellipse(x - rad * 0.25, y - rad * 0.25, rad * 0.4, rad * 0.28, 0.5, 0, Math.PI * 2); g.fill();
+    }
+
+    // eclats de minerai
+    for (let i = 0; i < 90; i++) {
       g.fillStyle = couleurMinerai;
-      g.globalAlpha = 0.16 + r() * 0.2;
+      g.globalAlpha = 0.12 + r() * 0.22;
       g.beginPath();
-      g.arc(r() * 220, r() * 220, 1 + r() * 2.6, 0, Math.PI * 2);
+      g.arc(r() * T, r() * T, 1 + r() * 2.4, 0, Math.PI * 2);
       g.fill();
     }
     g.globalAlpha = 1;
@@ -262,6 +394,47 @@
     ];
 
     motifSol = fabriquerSol(site.couleur);
+
+    // ---- equipe sur le site : ouvriers guineens au travail ----
+    const equipe = rng(900 + etat.siteIndex * 31);
+    ouvriers = [];
+    const postes = [
+      // autour de la pelle : deux hommes au sol
+      { x: site.pelle.x - 120, y: site.pelle.y + 70, type: "travail" },
+      { x: site.pelle.x + 40, y: site.pelle.y + 118, type: "travail" },
+      // pres de la tremie : un qui guide le camion
+      { x: site.tremie.x - 120, y: site.tremie.y + 30, type: "travail" },
+      { x: site.tremie.x + 20, y: site.tremie.y + 128, type: "travail" },
+      // a la pompe
+      { x: site.pompe.x + 92, y: site.pompe.y + 24, type: "travail" },
+    ];
+    postes.forEach((p, i) => {
+      ouvriers.push({
+        x: p.x, y: p.y, type: p.type, angle: equipe() * 6.28,
+        phase: equipe() * 6.28, rythme: 1.6 + equipe() * 0.9,
+        peau: ["#4a2c18", "#5d3a20", "#3d2414", "#6b4527"][i % 4],
+        gilet: i % 3 === 0 ? "#ff8a00" : "#f5d21b",
+        casque: i % 4 === 0 ? "#f2f2f2" : "#ffd700",
+      });
+    });
+    // deux marcheurs qui font des allers-retours sur les pistes
+    for (let i = 0; i < 2; i++) {
+      const a = site.pelle, b = site.tremie;
+      const t = 0.25 + equipe() * 0.5;
+      ouvriers.push({
+        x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t + (equipe() - 0.5) * 70,
+        type: "marche",
+        ax: a.x + (b.x - a.x) * t, ay: a.y + (b.y - a.y) * t,
+        bx: b.x + (a.x - b.x) * 0.15, by: b.y + (a.y - b.y) * 0.15,
+        angle: 0, phase: equipe() * 6.28, vit: 42 + equipe() * 26,
+        peau: ["#5d3a20", "#3d2414"][i % 2],
+        gilet: i === 0 ? "#f5d21b" : "#ff8a00",
+        casque: "#ffd700",
+      });
+    }
+
+    // mat du drapeau guineen pres de la tremie
+    mât = { x: site.tremie.x + 118, y: site.tremie.y - 96 };
 
     etat.camion.x = M / 2;
     etat.camion.y = M / 2 + 120;
@@ -420,8 +593,10 @@
 
     // pilote automatique : va a la pelle, puis a la tremie, et passe a la pompe
     if (AUTO) {
-      const vide = etat.charge < 0.2;
-      const cible = etat.gazole < 22 ? site.pompe : (vide ? site.pelle : site.tremie);
+      // mission : charger jusqu'a plein, puis vendre jusqu'a vide
+      if (etat.charge >= capaciteMax() - 0.01) etat.autoVend = true;
+      if (etat.charge <= 0.05) etat.autoVend = false;
+      const cible = etat.gazole < 22 ? site.pompe : (etat.autoVend ? site.tremie : site.pelle);
       const d = dist(c, cible);
       if (d > 105) {
         let a = Math.atan2(cible.y - c.y, cible.x - c.x);
@@ -499,6 +674,11 @@
 
     if (etat.gazole <= 0.01) {
       c.v = 0;
+      if ((sauvegarde.serie || 0) > 0) {
+        sauvegarde.serie = 0;
+        enregistrer();
+        toast("Panne sèche", "Série perdue. Refais le plein plus tôt.", "#ff4d4d");
+      }
       bulle("Panne sèche ! Il faut du gazole pour repartir.");
       if (dPompe < 150) remplir(dt);
     } else if (dPompe < 150 && etaGazolePlein() === false) {
@@ -510,9 +690,26 @@
       if (arrete) decharger(dt);
       else bulle("Arrête-toi dans le cercle pour vider la benne.");
     } else if (etat.charge > 0.2) {
-      bulle("File à la trémie pour vendre " + etat.charge.toFixed(0) + " t.");
+      bulle("Va à la trémie pour vendre ton chargement.");
     } else {
       bulle("");
+    }
+
+    // ouvriers : deplacement et animation
+    for (const o of ouvriers) {
+      o.phase += dt * (o.type === "marche" ? 7.5 : o.rythme * 2.4);
+      if (o.type === "marche") {
+        const dx = o.bx - o.x, dy = o.by - o.y;
+        const d = Math.hypot(dx, dy);
+        if (d < 8) {
+          const tx = o.ax, ty = o.ay;
+          o.ax = o.bx; o.ay = o.by; o.bx = tx; o.by = ty;
+        } else {
+          o.angle = Math.atan2(dy, dx);
+          o.x += Math.cos(o.angle) * o.vit * dt;
+          o.y += Math.sin(o.angle) * o.vit * dt;
+        }
+      }
     }
 
     // particules
@@ -572,9 +769,13 @@
     if (Math.random() < 0.3) bip(520, 0.04, "sine", 0.04);
   }
 
+  function multiSerie() {
+    return 1 + Math.min(sauvegarde.serie || 0, 10) * 0.05; // jusqu'a +50 %
+  }
+
   function decharger(dt) {
     const debit = Math.min(etat.charge, 9 * dt);
-    const gain = debit * site.prix * multiPrix();
+    const gain = debit * site.prix * multiPrix() * multiSerie();
     etat.charge -= debit;
     etat.argent += gain;
     etat.gainSite += gain;
@@ -582,7 +783,26 @@
     sauvegarde.argent = etat.argent;
     if (etat.charge <= 0.001) {
       sauvegarde.livraisons += 1;
+      sauvegarde.serie = (sauvegarde.serie || 0) + 1;
+      sauvegarde.record = Math.max(sauvegarde.record || 0, sauvegarde.serie);
+      const c = contratEnCours();
+      if (!c.fait) {
+        c.n += 1;
+        if (c.n >= CONTRAT_BUT) {
+          c.fait = true;
+          sauvegarde.argent += CONTRAT_PRIME;
+          etat.argent = sauvegarde.argent;
+          toast("Contrat du jour rempli", "+" + CONTRAT_PRIME + " € de prime", "#ffd700");
+        }
+      }
       etat.flottants.push({ x: etat.camion.x, y: etat.camion.y - 40, texte: "+" + euros(gain), vie: 1.6 });
+      if (sauvegarde.serie > 1) {
+        etat.flottants.push({
+          x: etat.camion.x, y: etat.camion.y - 74,
+          texte: "SÉRIE x" + sauvegarde.serie, vie: 1.8,
+        });
+      }
+      gagnerXp(Math.round(gain));
       bip(660, 0.12, "sine", 0.16);
       setTimeout(() => bip(880, 0.16, "sine", 0.16), 110);
       enregistrer();
@@ -600,8 +820,20 @@
   }
 
   /* -------------------------------- rendu ------------------------------- */
+  function preparerLumiere() {
+    const cle = L + "x" + H;
+    if (lumiereCle === cle) return;
+    lumiereCle = cle;
+    const g = ctx.createRadialGradient(L / 2, H / 2, Math.min(L, H) * 0.22, L / 2, H / 2, Math.max(L, H) * 0.8);
+    g.addColorStop(0, "rgba(255, 226, 170, 0.05)");
+    g.addColorStop(0.5, "rgba(0, 0, 0, 0)");
+    g.addColorStop(1, "rgba(26, 8, 0, 0.46)");
+    lumiere = g;
+  }
+
   function dessiner() {
     if (!ctx) return;
+    preparerLumiere();
     ctx.clearRect(0, 0, L, H);
 
     const cam = etat.camera;
@@ -654,6 +886,8 @@
     dessinerTremie(site.tremie);
     dessinerPompe(site.pompe);
     dessinerPelle(site.pelle);
+    dessinerDrapeau();
+    dessinerCones(site.pelle);
 
     // rochers
     for (const ro of rochers) {
@@ -683,6 +917,9 @@
     }
     ctx.globalAlpha = 1;
 
+    // equipe au sol
+    dessinerOuvriers();
+
     // camion
     dessinerCamion();
 
@@ -703,24 +940,194 @@
 
     ctx.restore();
 
+    // ambiance : lumiere chaude au centre, coins plus sombres
+    if (lumiere) {
+      ctx.fillStyle = lumiere;
+      ctx.fillRect(0, 0, L, H);
+    }
+
     dessinerMini();
   }
 
-  function dessinerRoute(a, b) {
+
+  /* --------------------------- ouvriers -------------------------------- */
+  function ombreDouce(x, y, rx, ry, force) {
+    const g = ctx.createRadialGradient(x, y, 0, x, y, Math.max(rx, ry));
+    g.addColorStop(0, "rgba(0,0,0," + (force || 0.3) + ")");
+    g.addColorStop(0.65, "rgba(0,0,0," + (force || 0.3) * 0.5 + ")");
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function dessinerOuvrier(o) {
+    const bal = Math.sin(o.phase);
+    ombreDouce(o.x + 3, o.y + 5, 13, 8, 0.34);
+
     ctx.save();
-    ctx.strokeStyle = "rgba(214,160,110,0.5)";
-    ctx.lineWidth = 46;
+    ctx.translate(o.x, o.y);
+    ctx.rotate(o.angle);
+
+    // jambes (pantalon de travail)
+    ctx.fillStyle = "#27405c";
+    ctx.beginPath(); ctx.roundRect(-4 + bal * 3, -8.5, 9, 6, 3); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(-4 - bal * 3, 2.5, 9, 6, 3); ctx.fill();
+    // chaussures de securite
+    ctx.fillStyle = "#1b1b1f";
+    ctx.beginPath(); ctx.roundRect(3 + bal * 3, -8, 4, 5, 2); ctx.fill();
+    ctx.beginPath(); ctx.roundRect(3 - bal * 3, 3, 4, 5, 2); ctx.fill();
+
+    // bras
+    ctx.fillStyle = o.peau;
+    ctx.beginPath(); ctx.ellipse(2, -9.5, 3.2, 4.4, 0, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.ellipse(2, 9.5, 3.2, 4.4, 0, 0, Math.PI * 2); ctx.fill();
+
+    // corps : gilet haute visibilite
+    ctx.fillStyle = o.gilet;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, 9, 8.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // bandes reflechissantes
+    ctx.fillStyle = "rgba(240,244,255,0.85)";
+    ctx.fillRect(-1.4, -7.6, 2.6, 15.2);
+    ctx.fillStyle = "rgba(255,255,255,0.22)";
+    ctx.beginPath();
+    ctx.ellipse(-2.5, -2, 6, 4, 0.3, 0, Math.PI * 2);
+    ctx.fill();
+
+    // tete (nuque) puis casque
+    ctx.fillStyle = o.peau;
+    ctx.beginPath(); ctx.arc(-1.5, 0, 6.1, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = o.casque;
+    ctx.beginPath();
+    ctx.ellipse(0.4, 0, 6.3, 5.9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.45)";
+    ctx.beginPath();
+    ctx.ellipse(-1.2, -1.8, 3.2, 2.3, 0.4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // outil : pelle tenue devant quand il travaille
+    if (o.type === "travail") {
+      ctx.strokeStyle = "#a9762c";
+      ctx.lineWidth = 2.4;
+      ctx.beginPath();
+      ctx.moveTo(5, -6);
+      ctx.lineTo(15 + bal * 4, 2 + bal * 3);
+      ctx.stroke();
+      ctx.fillStyle = "#8d939e";
+      ctx.save();
+      ctx.translate(15 + bal * 4, 2 + bal * 3);
+      ctx.rotate(0.5);
+      ctx.beginPath(); ctx.roundRect(-3, -2.5, 8, 6, 2); ctx.fill();
+      ctx.restore();
+    }
+
+    ctx.restore();
+
+    // halo discret pour reperer l'equipe de loin
+    if (o.type === "travail" && Math.random() < 0.02) {
+      etat.particules.push({
+        x: o.x + Math.cos(o.angle) * 16, y: o.y + Math.sin(o.angle) * 16,
+        vx: (Math.random() - 0.5) * 18, vy: -8,
+        r: 2 + Math.random() * 2, vie: 0.5, max: 1,
+      });
+    }
+  }
+
+  function dessinerOuvriers() {
+    for (const o of ouvriers) {
+      if (Math.abs(o.x - etat.camera.x) > 620 || Math.abs(o.y - etat.camera.y) > 420) continue;
+      dessinerOuvrier(o);
+    }
+  }
+
+  function dessinerDrapeau() {
+    if (!mât) return;
+    const { x, y } = mât;
+    ombreDouce(x + 3, y + 26, 12, 5, 0.25);
+    // mat
+    ctx.strokeStyle = "#cfd4dc";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(x, y + 26);
+    ctx.lineTo(x, y - 46);
+    ctx.stroke();
+    ctx.fillStyle = "#9aa2ae";
+    ctx.beginPath(); ctx.arc(x, y - 47, 3, 0, Math.PI * 2); ctx.fill();
+
+    // drapeau qui ondule
+    const larg = 34, haut = 22;
+    const ondes = 3;
+    for (let i = 0; i < ondes; i++) {
+      ctx.beginPath();
+      const cx = x + 1 + (larg / ondes) * i;
+      const dec = Math.sin(etat.temps * 2.4 + i * 0.9) * 3.2;
+      ctx.fillStyle = ["#ce1126", "#fcd116", "#009460"][i];
+      ctx.moveTo(cx, y - 46 + dec);
+      ctx.lineTo(cx + larg / ondes, y - 46 - dec);
+      ctx.lineTo(cx + larg / ondes, y - 46 + haut - dec);
+      ctx.lineTo(cx, y - 46 + haut + dec);
+      ctx.closePath();
+      ctx.fill();
+    }
+  }
+
+  /* --------------------------- ouvriers -------------------------------- */
+
+  function dessinerCones(centre) {
+    const angle0 = etat.temps * 0.05;
+    for (let i = 0; i < 5; i++) {
+      const a = angle0 + (i / 5) * Math.PI * 2;
+      const x = centre.x + Math.cos(a) * 196;
+      const y = centre.y + Math.sin(a) * 196;
+      ombreDouce(x + 2, y + 4, 9, 5, 0.24);
+      // cone de chantier
+      ctx.fillStyle = "#f05a1a";
+      ctx.beginPath();
+      ctx.moveTo(x, y - 11);
+      ctx.lineTo(x + 7, y + 7);
+      ctx.lineTo(x - 7, y + 7);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "rgba(255,255,255,0.9)";
+      ctx.fillRect(x - 5, y - 1, 10, 3.4);
+      ctx.fillStyle = "#2a2a2e";
+      ctx.beginPath(); ctx.roundRect(x - 8, y + 6, 16, 4, 2); ctx.fill();
+    }
+  }
+
+  function dessinerRoute(a, b) {
+    const ang = Math.atan2(b.y - a.y, b.x - a.x);
+    const nx = Math.cos(ang + Math.PI / 2);
+    const ny = Math.sin(ang + Math.PI / 2);
+
+    ctx.save();
     ctx.lineCap = "round";
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
-    ctx.strokeStyle = "rgba(186,131,84,0.55)";
-    ctx.lineWidth = 30;
-    ctx.beginPath();
-    ctx.moveTo(a.x, a.y);
-    ctx.lineTo(b.x, b.y);
-    ctx.stroke();
+
+    // accotement poussiereux
+    ctx.strokeStyle = "rgba(206,152,104,0.45)";
+    ctx.lineWidth = 54;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+
+    // piste tassee
+    ctx.strokeStyle = "rgba(178,124,80,0.6)";
+    ctx.lineWidth = 36;
+    ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+
+    // deux traces de pneus
+    ctx.strokeStyle = "rgba(112,66,38,0.4)";
+    ctx.lineWidth = 5;
+    [-11, 11].forEach((dec) => {
+      ctx.beginPath();
+      ctx.moveTo(a.x + nx * dec, a.y + ny * dec);
+      ctx.lineTo(b.x + nx * dec, b.y + ny * dec);
+      ctx.stroke();
+    });
+
+    // cailloux sur la piste
     ctx.restore();
   }
 
@@ -746,11 +1153,7 @@
     ctx.save();
     ctx.translate(p.x, p.y);
 
-    // ombre
-    ctx.fillStyle = "rgba(0,0,0,0.3)";
-    ctx.beginPath();
-    ctx.ellipse(6, 10, 62, 44, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ombreDouce(p.x + 6, p.y + 12, 68, 48, 0.34);
 
     // chenilles
     ctx.fillStyle = "#26242a";
@@ -831,10 +1234,7 @@
   function dessinerTremie(p) {
     ctx.save();
     ctx.translate(p.x, p.y);
-    ctx.fillStyle = "rgba(0,0,0,0.28)";
-    ctx.beginPath();
-    ctx.ellipse(8, 12, 78, 62, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ombreDouce(p.x + 8, p.y + 14, 84, 66, 0.34);
 
     // structure
     ctx.fillStyle = "#4a4f5c";
@@ -883,10 +1283,7 @@
   function dessinerPompe(p) {
     ctx.save();
     ctx.translate(p.x, p.y);
-    ctx.fillStyle = "rgba(0,0,0,0.26)";
-    ctx.beginPath();
-    ctx.ellipse(6, 10, 56, 44, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ombreDouce(p.x + 6, p.y + 12, 60, 46, 0.3);
 
     ctx.fillStyle = "#20313f";
     ctx.beginPath();
@@ -982,6 +1379,17 @@
     ctx.roundRect(25, -14, 12, 28, 4);
     ctx.fill();
 
+    // reflet de carrosserie
+    ctx.fillStyle = "rgba(255,255,255,0.14)";
+    ctx.beginPath();
+    ctx.roundRect(-40, -20, 54, 9, 4);
+    ctx.fill();
+    // poussiere sur la benne
+    ctx.fillStyle = "rgba(120,72,40,0.22)";
+    ctx.beginPath();
+    ctx.roundRect(-44, 14, 62, 9, 4);
+    ctx.fill();
+
     // phares
     ctx.fillStyle = "#fff6c2";
     ctx.beginPath(); ctx.roundRect(43, -18, 4, 8, 2); ctx.fill();
@@ -1067,6 +1475,8 @@
   /* --------------------------------- HUD -------------------------------- */
   const hud = {
     argent: $("#hud-argent"), site: $("#hud-site"),
+    niveau: $("#hud-niveau"), barXp: $("#bar-xp"),
+    serie: $("#hud-serie"), serieLigne: $("#hud-serie-ligne"),
     charge: $("#txt-charge"), barCharge: $("#bar-charge"),
     gaz: $("#txt-gazole"), barGaz: $("#bar-gazole"),
     objectif: $("#txt-objectif"), barObjectif: $("#bar-objectif"),
@@ -1088,6 +1498,11 @@
     dernierHud = etat.temps;
     hud.argent.textContent = euros(etat.argent);
     hud.site.textContent = site.nom + " · " + site.minerai;
+    if (hud.niveau) hud.niveau.textContent = (niveauActuel() + 1) + " · " + titreActuel();
+    if (hud.barXp) hud.barXp.style.width = Math.round(progressionNiveau() * 100) + "%";
+    const serie = sauvegarde.serie || 0;
+    if (hud.serie) hud.serie.textContent = "x" + multiSerie().toFixed(2).replace(".", ",");
+    if (hud.serieLigne) hud.serieLigne.classList.toggle("masque", serie < 2);
     hud.charge.textContent = Math.floor(etat.charge) + " / " + capaciteMax() + " t";
     hud.barCharge.style.width = (etat.charge / capaciteMax()) * 100 + "%";
     const gazPct = etat.gazole / reservoirMax();
@@ -1212,6 +1627,33 @@
 
   function dessinerAccueil() {
     $("#acc-argent").textContent = euros(sauvegarde.argent);
+    const n = niveauActuel();
+    $("#acc-niveau").textContent = "Niveau " + (n + 1) + " · " + NIVEAUX[n].titre;
+    $("#acc-xp").textContent = Math.floor(sauvegarde.xp) + " XP";
+    $("#acc-bar-xp").style.width = Math.round(progressionNiveau() * 100) + "%";
+
+    // contrat du jour
+    const c = contratEnCours();
+    const bloc = $("#bloc-contrat");
+    if (bloc) {
+      bloc.innerHTML = c.fait
+        ? '<span class="coche">✅</span><div><b>Contrat du jour rempli</b><br>Reviens demain pour une nouvelle prime de ' + CONTRAT_PRIME + " €.</div>"
+        : '<span class="coche">🎯</span><div><b>Contrat du jour : ' + CONTRAT_BUT + " livraisons</b><br>" +
+          "Encore " + Math.max(0, CONTRAT_BUT - c.n) + " à livrer pour " + CONTRAT_PRIME + " € de prime.</div>";
+    }
+
+    // succes
+    const zoneSucces = $("#liste-succes");
+    if (zoneSucces) {
+      zoneSucces.innerHTML = "";
+      SUCCES.forEach((su) => {
+        const d = document.createElement("div");
+        const ok = sauvegarde.succes.indexOf(su.id) !== -1;
+        d.className = ok ? "obtenu" : "";
+        d.textContent = (ok ? "✓ " : "• ") + su.nom;
+        zoneSucces.appendChild(d);
+      });
+    }
     $("#acc-livr").textContent = sauvegarde.livraisons;
     $("#acc-site").textContent = SITES[Math.min(sauvegarde.site, SITES.length - 1)].nom;
 

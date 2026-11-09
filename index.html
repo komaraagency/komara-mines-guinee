@@ -34,7 +34,20 @@
       <div><b id="acc-site">Boké</b><span>Site actuel</span></div>
     </div>
 
+    <div class="progres">
+      <div class="progres-tete">
+        <b id="acc-niveau">Niveau 1 · Apprenti</b>
+        <span id="acc-xp">0 XP</span>
+      </div>
+      <div class="xp grand"><i id="acc-bar-xp"></i></div>
+    </div>
+
     <div class="sites" id="liste-sites"></div>
+
+    <div class="contrat" id="bloc-contrat"></div>
+
+    <div class="succes-titre">Succès</div>
+    <div class="succes" id="liste-succes"></div>
 
     <p class="note">Comment jouer : pousse le joystick pour rouler. Arrête-toi dans le cercle de la pelle pour charger, puis dans le cercle de la trémie pour vendre. Passe à la pompe avant la panne sèche.</p>
     <button id="btn-reset" class="lien-discret">Recommencer à zéro</button>
@@ -55,6 +68,15 @@
       <div class="hud-ligne">
         <span class="hud-label">Site</span>
         <b id="hud-site">Boké · bauxite</b>
+      </div>
+      <div class="hud-ligne">
+        <span class="hud-label">Niveau</span>
+        <b id="hud-niveau">1 · Apprenti</b>
+      </div>
+      <div class="xp"><i id="bar-xp"></i></div>
+      <div class="hud-ligne serie" id="hud-serie-ligne">
+        <span class="hud-label">Série</span>
+        <b id="hud-serie">x1</b>
       </div>
     </div>
     <div class="hud-droite">
@@ -82,6 +104,9 @@
 
   <!-- message contextuel -->
   <div id="bulle" class="cache"></div>
+
+  <!-- recompenses qui glissent en haut -->
+  <div id="toast"></div>
 
   <!-- controles -->
   <div id="zone-joystick"><div id="joystick"><i></i></div></div>
