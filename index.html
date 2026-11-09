@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Komara Mines Guinée — Conducteur d'engins</title>
+<meta name="description" content="Simulateur d'engins miniers en Guinée : bauxite de Boké, or de Siguiri, fer du Simandou, diamant de Banankoro. Conduis ton camion, charge le minerai, livre-le au port.">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Komara Mines">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="assets/favicon-64.png" sizes="64x64">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+
+<div id="tricolore" aria-hidden="true"><i></i><i></i><i></i></div>
+
+<!-- ======================= ECRAN D'ACCUEIL ======================= -->
+<section id="accueil" class="ecran actif">
+  <div class="carte-accueil">
+    <img class="logo" src="assets/logo-256.png" alt="Komara Agency" width="92" height="92">
+    <p class="sur-titre">komara Agency · Guinée 🇬🇳</p>
+    <h1>Komara<br>Mines</h1>
+    <p class="baseline">Conducteur d'engins lourds. Charge la bauxite, l'or, le fer et le diamant, et livre-les au port.</p>
+
+    <button id="btn-jouer" class="btn-principal">Jouer</button>
+
+    <div class="stats">
+      <div><b id="acc-argent">0 €</b><span>Fortune</span></div>
+      <div><b id="acc-livr">0</b><span>Livraisons</span></div>
+      <div><b id="acc-site">Boké</b><span>Site actuel</span></div>
+    </div>
+
+    <div class="sites" id="liste-sites"></div>
+
+    <p class="note">Comment jouer : pousse le joystick pour rouler. Arrête-toi dans le cercle de la pelle pour charger, puis dans le cercle de la trémie pour vendre. Passe à la pompe avant la panne sèche.</p>
+    <button id="btn-reset" class="lien-discret">Recommencer à zéro</button>
+  </div>
+</section>
+
+<!-- ======================= JEU ======================= -->
+<section id="jeu" class="ecran">
+  <canvas id="scene"></canvas>
+
+  <!-- HUD haut -->
+  <header id="hud">
+    <div class="hud-gauche">
+      <div class="hud-ligne">
+        <span class="hud-label">Argent</span>
+        <b id="hud-argent">0 €</b>
+      </div>
+      <div class="hud-ligne">
+        <span class="hud-label">Site</span>
+        <b id="hud-site">Boké · bauxite</b>
+      </div>
+    </div>
+    <div class="hud-droite">
+      <button id="btn-son" class="btn-rond" aria-label="Son">🔊</button>
+      <button id="btn-pause" class="btn-rond" aria-label="Pause">⏸</button>
+    </div>
+  </header>
+
+  <div id="jauges">
+    <div class="jauge">
+      <div class="jauge-tete"><span>Chargement</span><b id="txt-charge">0 / 20 t</b></div>
+      <div class="jauge-barre"><i id="bar-charge"></i></div>
+    </div>
+    <div class="jauge">
+      <div class="jauge-tete"><span>Gazole</span><b id="txt-gazole">100 %</b></div>
+      <div class="jauge-barre gazole"><i id="bar-gazole"></i></div>
+    </div>
+    <div class="jauge objectif">
+      <div class="jauge-tete"><span>Objectif du site</span><b id="txt-objectif">0 / 800 €</b></div>
+      <div class="jauge-barre objectif"><i id="bar-objectif"></i></div>
+    </div>
+  </div>
+
+  <div id="minimap"><canvas id="mini"></canvas></div>
+
+  <!-- message contextuel -->
+  <div id="bulle" class="cache"></div>
+
+  <!-- controles -->
+  <div id="zone-joystick"><div id="joystick"><i></i></div></div>
+  <div id="boutons-jeu">
+    <button id="btn-garage" class="btn-action"><span>🔧</span>Garage</button>
+    <button id="btn-frein" class="btn-action frein"><span>✋</span>Frein</button>
+  </div>
+
+  <!-- pause -->
+  <div id="voile-pause" class="voile cache">
+    <div class="panneau">
+      <h2>Pause</h2>
+      <button id="reprendre" class="btn-principal">Reprendre</button>
+      <button id="vers-accueil" class="btn-secondaire">Quitter le site</button>
+    </div>
+  </div>
+
+  <!-- garage -->
+  <div id="voile-garage" class="voile cache">
+    <div class="panneau garage">
+      <div class="panneau-tete">
+        <h2>Garage</h2>
+        <button id="fermer-garage" class="btn-rond">✕</button>
+      </div>
+      <p class="argent-garage">Argent disponible : <b id="garage-argent">0 €</b></p>
+      <div id="liste-ameliorations"></div>
+    </div>
+  </div>
+
+  <!-- objectif atteint -->
+  <div id="voile-site" class="voile cache">
+    <div class="panneau">
+      <p class="etiquette">Site terminé</p>
+      <h2 id="site-titre">Boké</h2>
+      <p id="site-texte">Tu as atteint l'objectif.</p>
+      <button id="btn-site-suivant" class="btn-principal">Site suivant</button>
+      <button id="btn-rester" class="btn-secondaire">Rester sur ce site</button>
+    </div>
+  </div>
+</section>
+
+<script src="jeu.js?v=1"></script>
+</body>
+</html>

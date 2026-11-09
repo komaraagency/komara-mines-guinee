@@ -1,0 +1,454 @@
+/* ==========================================================================
+   Komara Mines Guinée — interface
+   Identité Komara : tricolore rouge / jaune / vert, cartes sombres, or.
+   ========================================================================== */
+
+:root {
+  --rouge: #d11231;
+  --jaune: #f5cf1b;
+  --vert: #009a44;
+  --noir: #0a0a0a;
+  --or: #ffd700;
+  --carte: #101014;
+  --carte-2: #17171d;
+  --bord: rgba(255, 255, 255, 0.12);
+  --texte: #f4f2ec;
+  --doux: #a9a6a0;
+  --u: clamp(15px, 4.4vw, 24px);
+  --marge: clamp(10px, 3vw, 20px);
+  --r: 14px;
+}
+
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+html {
+  font-size: var(--u);
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  min-height: 100dvh;
+  background: var(--noir);
+  color: var(--texte);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  overflow: hidden;
+  overscroll-behavior: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* bandes tricolores verticales, toujours visibles sur les bords */
+#tricolore {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  z-index: 0;
+  pointer-events: none;
+}
+#tricolore i:nth-child(1) { background: linear-gradient(180deg, var(--rouge), #8d0b21); }
+#tricolore i:nth-child(2) { background: linear-gradient(180deg, var(--jaune), #b89a06); }
+#tricolore i:nth-child(3) { background: linear-gradient(180deg, var(--vert), #006b2f); }
+
+/* ------------------------------- ecrans -------------------------------- */
+.ecran {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: none;
+  flex-direction: column;
+}
+.ecran.actif { display: flex; }
+
+/* ------------------------------ accueil -------------------------------- */
+#accueil {
+  overflow-y: auto;
+  padding: calc(var(--marge) + env(safe-area-inset-top)) var(--marge) calc(var(--marge) + env(safe-area-inset-bottom));
+  background: rgba(5, 5, 7, 0.72);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  align-items: center;
+}
+
+.carte-accueil {
+  width: 100%;
+  max-width: 30rem;
+  margin: auto;
+  background: linear-gradient(170deg, var(--carte-2), var(--carte));
+  border: 1px solid var(--bord);
+  border-radius: 22px;
+  padding: 1.4rem 1.15rem 1.2rem;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.55);
+  text-align: center;
+}
+
+.logo { width: 5.8rem; height: 5.8rem; border-radius: 50%; }
+
+.sur-titre {
+  margin: 0.55rem 0 0.2rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--or);
+  font-weight: 800;
+}
+
+.carte-accueil h1 {
+  margin: 0;
+  font-size: clamp(2.3rem, 11vw, 3.1rem);
+  line-height: 0.94;
+  letter-spacing: -0.02em;
+  font-weight: 900;
+  background: linear-gradient(100deg, #fff 10%, var(--or) 55%, #ffe98a 90%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.baseline {
+  margin: 0.7rem 0 1.1rem;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  color: var(--doux);
+}
+
+.btn-principal {
+  width: 100%;
+  border: 0;
+  border-radius: 14px;
+  padding: 1rem;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+  color: #14100a;
+  background: linear-gradient(180deg, #ffe335, var(--or));
+  box-shadow: 0 8px 0 #8a6d00, 0 12px 24px rgba(0, 0, 0, 0.4);
+  transition: transform 0.08s, box-shadow 0.08s;
+}
+.btn-principal:active { transform: translateY(3px); box-shadow: 0 5px 0 #8a6d00; }
+
+.btn-secondaire {
+  width: 100%;
+  margin-top: 0.55rem;
+  border: 1px solid var(--bord);
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--texte);
+  border-radius: 12px;
+  padding: 0.8rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.45rem;
+  margin: 1rem 0 0.9rem;
+}
+.stats div {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--bord);
+  border-radius: 12px;
+  padding: 0.55rem 0.3rem;
+}
+.stats b { display: block; font-size: 0.98rem; color: var(--or); }
+.stats span { font-size: 0.66rem; color: var(--doux); text-transform: uppercase; letter-spacing: 0.06em; }
+
+.sites {
+  display: grid;
+  gap: 0.42rem;
+  margin-bottom: 0.9rem;
+}
+.site-carte {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  text-align: left;
+  padding: 0.6rem 0.7rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--bord);
+  font-size: 0.84rem;
+}
+.site-carte .pastille {
+  width: 0.72rem; height: 0.72rem; border-radius: 50%; flex: 0 0 auto;
+  box-shadow: 0 0 10px currentColor;
+}
+.site-carte b { font-weight: 800; }
+.site-carte em { font-style: normal; color: var(--doux); font-size: 0.76rem; display: block; }
+.site-carte.verrou { opacity: 0.42; }
+.site-carte.fini { border-color: rgba(0, 154, 68, 0.55); background: rgba(0, 154, 68, 0.1); }
+
+.note {
+  font-size: 0.74rem;
+  line-height: 1.5;
+  color: var(--doux);
+  margin: 0.2rem 0 0.8rem;
+  text-align: left;
+}
+
+.lien-discret {
+  background: none;
+  border: 0;
+  color: #6f6b66;
+  font-size: 0.7rem;
+  text-decoration: underline;
+  padding: 0.3rem;
+}
+
+/* -------------------------------- jeu ---------------------------------- */
+#jeu { background: #3a1d10; }
+
+#scene { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+
+/* HUD */
+#hud {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 0.5rem);
+  left: 0.55rem; right: 0.55rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+  pointer-events: none;
+  z-index: 5;
+}
+.hud-gauche {
+  background: rgba(10, 10, 12, 0.78);
+  border: 1px solid var(--bord);
+  border-radius: 12px;
+  padding: 0.42rem 0.6rem;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.hud-ligne { display: flex; align-items: baseline; gap: 0.45rem; line-height: 1.25; }
+.hud-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--doux); }
+.hud-ligne b { font-size: 0.92rem; color: var(--or); font-variant-numeric: tabular-nums; }
+.hud-ligne:nth-child(2) b { font-size: 0.76rem; color: #fff; }
+
+.hud-droite { display: flex; gap: 0.4rem; pointer-events: auto; }
+.btn-rond {
+  width: 2.5rem; height: 2.5rem;
+  border-radius: 50%;
+  border: 1px solid var(--bord);
+  background: rgba(10, 10, 12, 0.78);
+  color: #fff;
+  font-size: 1.05rem;
+  display: grid; place-items: center;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.btn-rond:active { transform: scale(0.94); }
+
+/* jauges */
+#jauges {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 4.6rem);
+  left: 0.55rem;
+  width: min(56%, 15rem);
+  display: grid;
+  gap: 0.32rem;
+  z-index: 5;
+  pointer-events: none;
+}
+.jauge {
+  background: rgba(10, 10, 12, 0.74);
+  border: 1px solid var(--bord);
+  border-radius: 10px;
+  padding: 0.3rem 0.45rem 0.38rem;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+.jauge-tete {
+  display: flex; justify-content: space-between; align-items: baseline;
+  font-size: 0.62rem; color: var(--doux); margin-bottom: 0.2rem;
+}
+.jauge-tete b { color: #fff; font-size: 0.68rem; font-variant-numeric: tabular-nums; }
+.jauge-barre {
+  height: 0.42rem;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.14);
+  overflow: hidden;
+}
+.jauge-barre i {
+  display: block; height: 100%; width: 0%;
+  border-radius: 99px;
+  background: linear-gradient(90deg, #b07b1a, var(--or));
+  transition: width 0.12s linear;
+}
+.jauge-barre.gazole i { background: linear-gradient(90deg, #1c7a45, #35d07f); }
+.jauge-barre.objectif i { background: linear-gradient(90deg, #8d0b21, var(--rouge)); }
+.jauge-barre.gazole.vide i { background: linear-gradient(90deg, #8d0b21, #ff4d4d); }
+
+/* minimap */
+#minimap {
+  position: absolute;
+  top: calc(env(safe-area-inset-top) + 4.6rem);
+  right: 0.55rem;
+  width: 5.4rem; height: 5.4rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 215, 0, 0.5);
+  overflow: hidden;
+  background: rgba(10, 10, 12, 0.72);
+  z-index: 5;
+  pointer-events: none;
+}
+#mini { width: 100%; height: 100%; display: block; }
+
+/* bulle contextuelle */
+#bulle {
+  position: absolute;
+  left: 50%;
+  bottom: 42%;
+  transform: translateX(-50%);
+  max-width: 82%;
+  padding: 0.5rem 0.85rem;
+  border-radius: 99px;
+  background: rgba(10, 10, 12, 0.9);
+  border: 1px solid rgba(255, 215, 0, 0.45);
+  color: #fff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+  z-index: 6;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.cache { opacity: 0 !important; pointer-events: none !important; }
+
+/* joystick */
+#zone-joystick {
+  position: absolute;
+  left: 0; bottom: 0;
+  width: 58%; height: 42%;
+  z-index: 6;
+  touch-action: none;
+}
+#joystick {
+  position: absolute;
+  left: 1.1rem;
+  bottom: calc(env(safe-area-inset-bottom) + 1.1rem);
+  width: 6.2rem; height: 6.2rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  background: rgba(10, 10, 12, 0.42);
+  opacity: 0.85;
+  transition: opacity 0.15s;
+}
+#joystick i {
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 2.9rem; height: 2.9rem;
+  margin: -1.45rem 0 0 -1.45rem;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #ffe98a, var(--or) 60%, #b89000);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55), inset 0 0 0 2px rgba(255, 255, 255, 0.35);
+}
+#joystick.actif { opacity: 1; }
+
+/* boutons d'action */
+#boutons-jeu {
+  position: absolute;
+  right: 0.9rem;
+  bottom: calc(env(safe-area-inset-bottom) + 1.1rem);
+  display: grid;
+  gap: 0.55rem;
+  z-index: 6;
+}
+.btn-action {
+  width: 4.4rem; height: 4.4rem;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 255, 255, 0.28);
+  background: rgba(10, 10, 12, 0.62);
+  color: #fff;
+  font-size: 0.6rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  display: grid;
+  place-items: center;
+  gap: 0.1rem;
+  text-transform: uppercase;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.btn-action span { font-size: 1.5rem; line-height: 1; }
+.btn-action:active { transform: scale(0.93); }
+.btn-action.frein { width: 5rem; height: 5rem; border-color: rgba(209, 18, 49, 0.7); background: rgba(209, 18, 49, 0.28); }
+
+/* --------------------------- voiles / panneaux -------------------------- */
+.voile {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: var(--marge);
+  background: rgba(4, 4, 6, 0.8);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  transition: opacity 0.2s;
+}
+.panneau {
+  width: 100%;
+  max-width: 26rem;
+  max-height: 88vh;
+  overflow-y: auto;
+  background: linear-gradient(170deg, var(--carte-2), var(--carte));
+  border: 1px solid var(--bord);
+  border-radius: 20px;
+  padding: 1.15rem;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+}
+.panneau h2 { margin: 0.2rem 0 0.9rem; font-size: 1.5rem; font-weight: 900; }
+.panneau-tete { display: flex; justify-content: space-between; align-items: center; }
+.panneau-tete h2 { margin: 0 0 0.6rem; }
+.etiquette {
+  margin: 0 0 0.2rem;
+  font-size: 0.68rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--vert);
+  font-weight: 800;
+}
+
+.argent-garage { font-size: 0.85rem; color: var(--doux); margin: 0 0 0.9rem; }
+.argent-garage b { color: var(--or); font-size: 1rem; }
+
+.amelioration {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+  padding: 0.65rem 0.7rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid var(--bord);
+  margin-bottom: 0.45rem;
+}
+.amelioration .nom { font-weight: 800; font-size: 0.86rem; }
+.amelioration .niveau { font-size: 0.7rem; color: var(--doux); display: block; margin-top: 0.12rem; }
+.amelioration button {
+  border: 0;
+  border-radius: 10px;
+  padding: 0.5rem 0.7rem;
+  font-size: 0.78rem;
+  font-weight: 900;
+  color: #14100a;
+  background: linear-gradient(180deg, #ffe335, var(--or));
+  min-width: 5.2rem;
+}
+.amelioration button:disabled {
+  background: rgba(255, 255, 255, 0.1);
+  color: #7d7a75;
+}
+.amelioration.max { border-color: rgba(0, 154, 68, 0.5); }
+
+/* paysage plus large */
+@media (min-width: 640px) {
+  #jauges { width: 15rem; }
+  #minimap { width: 6.4rem; height: 6.4rem; }
+}
