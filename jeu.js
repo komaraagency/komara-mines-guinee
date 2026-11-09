@@ -1011,7 +1011,7 @@
     ctx.translate(x, y);
     ctx.rotate(a);
     ctx.globalAlpha = 0.75 + Math.sin(etat.temps * 4) * 0.2;
-    ctx.fillStyle = plein ? "#35d07f" : "#ffd700";
+    ctx.fillStyle = charge ? "#35d07f" : "#ffd700";
     ctx.beginPath();
     ctx.moveTo(16, 0);
     ctx.lineTo(-8, -11);
