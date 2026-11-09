@@ -12,7 +12,7 @@
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="assets/favicon-64.png" sizes="64x64">
 <link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
-<link rel="stylesheet" href="style.css?v=2">
+<link rel="stylesheet" href="style.css?v=3">
 </head>
 <body>
 
@@ -123,6 +123,27 @@
   </div>
 </section>
 
-<script src="jeu.js?v=2"></script>
+<script>
+/* veille : capture toute erreur, y compris celles du moteur */
+window.addEventListener("error", function (e) {
+  var d = document.getElementById("veille") || (function () {
+    var x = document.createElement("div");
+    x.id = "veille";
+    x.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99999;background:#b00020;color:#fff;font:12px/1.45 monospace;padding:8px;white-space:pre-wrap;max-height:50vh;overflow:auto";
+    document.body.appendChild(x);
+    return x;
+  })();
+  d.textContent = "ERREUR: " + e.message + " | " + (e.filename || "").split("/").pop() + ":" + e.lineno + ":" + e.colno;
+}, true);
+window.addEventListener("unhandledrejection", function (e) {
+  var d = document.getElementById("veille") || (function () {
+    var x = document.createElement("div"); x.id = "veille";
+    x.style.cssText = "position:fixed;left:0;right:0;top:0;z-index:99999;background:#b00020;color:#fff;font:12px monospace;padding:8px";
+    document.body.appendChild(x); return x;
+  })();
+  d.textContent = "PROMESSE REJETEE: " + e.reason;
+}, true);
+</script>
+<script src="jeu.js?v=3"></script>
 </body>
 </html>

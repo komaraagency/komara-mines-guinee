@@ -5,6 +5,7 @@
    ========================================================================== */
 (function () {
   "use strict";
+  document.documentElement.setAttribute("data-moteur", "chargé");
 
   /* ------------------------------- sites -------------------------------- */
   const SITES = [
